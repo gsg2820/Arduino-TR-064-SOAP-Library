@@ -4,13 +4,21 @@ cache:
   directories:
     - ~/arduino_ide
     - ~/.arduino15/packages/
-# Blacklist
+# Blacklist branches for which not to run the CI (e.g. documentation branch)
 branches:
   except:
     - gh-pages
 git:
   depth: false
   quiet: true
+addons:
+  # Load the requirements for the formatting check
+  apt:
+    sources:
+      - llvm-toolchain-trusty-5.0
+      - key_url: 'http://apt.llvm.org/llvm-snapshot.gpg.key'
+    packages:
+      - clang-format-5.0
 env:
   global:
      - ARDUINO_IDE_VERSION="1.8.11"
@@ -19,11 +27,17 @@ env:
 #    - DOXYFILE: $TRAVIS_BUILD_DIR/Doxyfile
  
 before_install:
+   # Download the install script for the Arduino library
    - source <(curl -SLs https://raw.githubusercontent.com/adafruit/travis-ci-arduino/master/install.sh)
+   # Load the requirements for the formatting check
+   - curl -SLs https://raw.githubusercontent.com/adafruit/travis-ci-arduino/master/run-clang-format.py > run-clang-format.py
 install:
    - arduino --install-library "ConfigManager"
 
 script:
+   # Run formatting check
+   - python run-clang-format.py -r .
+   # Run tests for both plattforms
    - build_platform esp8266
    - build_platform esp32
  
