@@ -3,10 +3,10 @@
  *  René Vollmer
  *  Example code for the home-indicator-project [ https://www.instructables.com/id/Who-Is-Home-Indicator-aka-Weasley-Clock-Based-on-T ].
  *  
-  * Please adjust your data below.
+  * Please adjust your data and router settings below.
  *  
  *  Created on: 09.12.2015,
- *  latest update: 11.06.2019
+ *  latest update: 10.03.2020
  *
  */
 
@@ -142,8 +142,10 @@ void setup() {
 
 	// Initialize the TR-064 library
 	// (IMPORTANT!)
-	if(Serial) Serial.printf("Initialize TR-064 connection\n\n");
-    connection.debug_level = DEBUG_VERBOSE; //0: None, 1: Errors, 2: Warning, 3: Info, 4: Verbose
+	if(Serial) Serial.printf("Initialize TR-064 connection.\n\n");
+    // Available debug levels are:
+    //  DEBUG_NONE, DEBUG_ERROR, DEBUG_WARNING, DEBUG_INFO, DEBUG_VERBOSE
+    connection.debug_level = DEBUG_VERBOSE;
 	connection.init();
 
 	// Request the number of (connected) Wifi-Devices
@@ -204,7 +206,7 @@ void loop() {
 			digitalWrite(userPins[i], LOW);
 		}
 	}
-	delay(1000);
+	delay(5000);
 }
 
 

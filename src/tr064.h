@@ -70,6 +70,7 @@ class TR064 {
     private:
         //TODO: More consistent naming.
         void initServiceURLs();
+		void ensureNonce();
         void deb_print(String message, int level);
         void deb_println(String message, int level);
         String action_raw(String service, String act, String params[][2], int nParam);
@@ -87,7 +88,7 @@ class TR064 {
         String _realm; //To be requested from the router
         String _secretH; //to be generated
         String _nonce = "";
-        const String _requestStart = "<?xml version=\"1.0\"?><s:Envelope xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\" s:encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\">";
+        const String _requestStart = "<?xml version=\"1.0\"?>\n<s:Envelope s:encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\" xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\">";
         const String _detectPage = "/tr64desc.xml";
 
         /* TODO: We should give access to this data for users to inspect the
