@@ -77,9 +77,13 @@ void TR064::initServiceURLs() {
      * possibilities of their device(s) - see #9 on Github.
      */
     String xmlR = httpRequest(_detectPage, "", "");
+	
+	deb_println("[initServiceURLs] Router name: " + xmlTakeParam(xmlR, "friendlyName"), DEBUG_INFO);
+	deb_println("[initServiceURLs] Router model: " + xmlTakeParam(xmlR, "modelDescription"), DEBUG_INFO);
+	
     int CountChar = 7; //length of word "service"
     int i = 0;
-    deb_println("Detected Services:", DEBUG_INFO);
+    deb_println("[initServiceURLs] Detected Services:", DEBUG_INFO);
 	String inStr = xmlR;
     while (inStr.indexOf("<service>") > 0 || inStr.indexOf("</service>") > 0) {
         int indexStart=inStr.indexOf("<service>");
@@ -97,9 +101,6 @@ void TR064::initServiceURLs() {
         if (Serial) Serial.flush();
         inStr = inStr.substring(indexStop+CountChar+3);
     }
-	
-	deb_println("[initServiceURLs] Router name: " + xmlTakeParam(xmlR, "friendlyName"), DEBUG_INFO);
-	deb_println("[initServiceURLs] Router model: " + xmlTakeParam(xmlR, "modelDescription"), DEBUG_INFO);
 	
 }
 
@@ -238,65 +239,29 @@ String TR064::action(String service, String act, String params[][2], int nParam)
     String status = "unauthenticated";
     String xmlR = "";
     int tries = 0; // Keep track on the number of times we tried to request.
-    while (status == "unauthenticated" && tries < 3) {
+    while (status == "unauthenticated" && tries < 4) {
         ++tries;
-		ensureNonce();
-        if (_nonce != "" && _realm != "") {
-			xmlR = action_raw(service, act, params, nParam);
-			status = xmlTakeParam(xmlR, "Status");
-			deb_println("[action] Response status: "+status, DEBUG_INFO);
-			status.toLowerCase();
-			// If we already have a nonce, but the request comes back unauthenticated. 
-			if (status == "unauthenticated" && tries < 3) {
-				deb_println("[action]<error> got an unauthenticated error. Using the new nonce and trying again in 3s.", DEBUG_ERROR);
-				takeNonce(xmlR);
-				delay(3000);
-			}
+		
+		xmlR = action_raw(service, act, params, nParam);
+		status = xmlTakeParam(xmlR, "Status");
+		deb_println("[action] Response status: "+status, DEBUG_INFO);
+		status.toLowerCase();
+		// If we already have a nonce, but the request comes back unauthenticated. 
+		if (status == "unauthenticated" && tries < 4) {
+			deb_println("[action]<error> Got an unauthenticated error. Using the new nonce and trying again in 3s.", DEBUG_ERROR);
+			takeNonce(xmlR);
+			delay(3000);
 		}
     }
     
-    if (tries >= 3) {
-        deb_println("[action]<error> Giving up the request ", DEBUG_ERROR);
+    if (tries >= 4) {
+        deb_println("[action]<error> Giving up the request.", DEBUG_ERROR);
     } else {    
         deb_println("[action] Done.", DEBUG_INFO);
         takeNonce(xmlR);
     }
     
     return xmlR;
-}
-
-
-void TR064::ensureNonce() {
-	if (_nonce == "" || _realm == "") {
-		String xmlR;
-		deb_println("[ensureNonce] No nonce/realm found. Requesting...", DEBUG_INFO);
-		// TODO: Is this request supported by all devices or should we use a different one here?
-		
-		// Old inital request
-		//String a[][2] = {{"NewAssociatedDeviceIndex", "1"}};
-		//xmlR = action_raw("urn:dslforum-org:service:WLANConfiguration:1", "GetGenericAssociatedDeviceInfo", a, 1);
-		
-		String a[][2] = {};
-		//xmlR = action_raw("urn:dslforum-org:service:DeviceInfo:1", "GetInfo", a, 1);
-		xmlR = action_raw("urn:dslforum-org:service:Hosts:1", "GetHostNumberOfEntries", a, 1);
-		takeNonce(xmlR);
-		
-		if (_nonce == "" || _realm == "") {
-			deb_println("[ensureNonce]<error> Nonce/realm request not successful!", DEBUG_ERROR);
-			deb_println("[ensureNonce]<error> Retrying in 5s", DEBUG_ERROR);
-			delay(5000);
-		} else {
-			//
-			deb_println("[ensureNonce] Inital nonce retrieved.", DEBUG_INFO);
-			deb_println("[ensureNonce] Router Model: " + xmlTakeParam(xmlR, "NewModelName"), DEBUG_INFO);
-			deb_println("[ensureNonce] Router software version: " + xmlTakeParam(xmlR, "NewSoftwareVersion"), DEBUG_INFO);
-			deb_println("[ensureNonce] Router up time: " + xmlTakeParam(xmlR, "NewUpTime"), DEBUG_INFO);
-		}
-		
-		if (_nonce == "" || _realm == "") {
-			deb_println("[ensureNonce]<error> Could not retrieve Nonce. Giving up.", DEBUG_ERROR);
-		}
-	}
 }
 
 /**************************************************************************/
