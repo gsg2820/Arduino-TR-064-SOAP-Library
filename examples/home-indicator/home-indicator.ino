@@ -3,10 +3,10 @@
  *  René Vollmer
  *  Example code for the home-indicator-project [ https://www.instructables.com/id/Who-Is-Home-Indicator-aka-Weasley-Clock-Based-on-T ].
  *  
-  * Please adjust your data and router settings below.
+ * Please adjust your data and router settings below.
  *  
  *  Created on: 09.12.2015,
- *  latest update: 10.03.2020
+ *    latest update: 10.03.2020
  *
  */
 
