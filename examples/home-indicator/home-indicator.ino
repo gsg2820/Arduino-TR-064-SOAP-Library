@@ -49,6 +49,10 @@ const char* IP = "192.168.179.1";
 // Port of the API of your router. This should be 49000 for all TR-064 devices.
 const int PORT = 49000;
 
+//-------------------------------------------------------------------------------------
+// Put the data of the devices you want to detect here
+//-------------------------------------------------------------------------------------
+
 // Put the settings for the devices to detect here
 //   The number of different people/user you want to be able to detect
 const int numUser = 3;
@@ -56,11 +60,9 @@ const int numUser = 3;
 //   The maximum amount of devices per user
 const int maxDevices = 3;
 
-//-------------------------------------------------------------------------------------
-
 
 /*
- * The array of macs. Structure:
+ * The array of macs to be checked per user. Structure:
  * = {{"mac1:user1", "mac2:user1", ..., "macX:user1"}, {"mac1:user2", "mac2:user2", ..., "macX:user2"}, ..., {"mac1:userY", "mac2:userY", ..., "macX:userY"}};
  * Doesn't matter if upper or lowercase :)
  */

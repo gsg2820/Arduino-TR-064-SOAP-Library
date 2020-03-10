@@ -70,7 +70,6 @@ class TR064 {
     private:
         //TODO: More consistent naming.
         void initServiceURLs();
-		void ensureNonce();
         void deb_print(String message, int level);
         void deb_println(String message, int level);
         String action_raw(String service, String act, String params[][2], int nParam);

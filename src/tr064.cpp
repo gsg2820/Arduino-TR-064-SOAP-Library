@@ -62,6 +62,7 @@ TR064::TR064(int port, String ip, String user, String pass) {
 */
 /**************************************************************************/
 void TR064::init() {
+	deb_println("[init] Started initialization of the TR-064 library.", DEBUG_INFO);
     delay(100); // TODO: REMOVE (after testing, that it still works!)
     // Get a list of all services and the associated urls
     initServiceURLs();
@@ -148,7 +149,7 @@ String TR064::generateAuthXML() {
 /**************************************************************************/
 String TR064::generateAuthToken() {
     String token = md5String(_secretH + ":" + _nonce);
-    deb_println("The auth token is '" + token + "'", DEBUG_INFO);
+    deb_println("[generateAuthToken] The auth token is '" + token + "'.", DEBUG_INFO);
     return token;
 }
 
@@ -200,7 +201,7 @@ String TR064::action(String service, String act) {
 */
 /**************************************************************************/
 String TR064::action(String service, String act, String params[][2], int nParam, String (*req)[2], int nReq) {
-    deb_println("[action] with extraction", DEBUG_VERBOSE);
+    deb_println("[action] Call with extraction of return arguments.", DEBUG_VERBOSE);
     String xmlR = action(service, act, params, nParam);
     String body = xmlTakeParam(xmlR, "s:Body");
 
@@ -234,27 +235,34 @@ String TR064::action(String service, String act, String params[][2], int nParam,
 */
 /**************************************************************************/
 String TR064::action(String service, String act, String params[][2], int nParam) {
-    deb_println("[action] with parameters", DEBUG_VERBOSE);
+    deb_println("[action] Call with parameters/arguments to be passed.", DEBUG_VERBOSE);
     
     String status = "unauthenticated";
     String xmlR = "";
     int tries = 0; // Keep track on the number of times we tried to request.
-    while (status == "unauthenticated" && tries < 4) {
+    while ((xmlR == "" || status == "unauthenticated") && tries < 4) {
         ++tries;
 		
+		deb_println("[action] Attempt " + String(tries)+ " of calling " + act + " on " + service, DEBUG_VERBOSE);
 		xmlR = action_raw(service, act, params, nParam);
 		status = xmlTakeParam(xmlR, "Status");
 		deb_println("[action] Response status: "+status, DEBUG_INFO);
 		status.toLowerCase();
-		// If we already have a nonce, but the request comes back unauthenticated. 
+		// If the request comes back unauthenticated, we probably also got a nonce, so use that to try again.
 		if (status == "unauthenticated" && tries < 4) {
-			deb_println("[action]<error> Got an unauthenticated error. Using the new nonce and trying again in 3s.", DEBUG_ERROR);
+			deb_println("[action]<warning> Got an unauthenticated error. Using the new nonce and trying again.", DEBUG_WARNING);
 			takeNonce(xmlR);
-			delay(3000);
+		}
+		if (xmlR == "") {
+			deb_println("[action]<error> Got an empty reply (e.g. http error). Trying again in 10s.", DEBUG_ERROR);
+			delay(10000);
 		}
     }
     
     if (tries >= 4) {
+		if (status == "unauthenticated") {
+			deb_println("[action]<error> Could not authenticate.", DEBUG_ERROR);
+		}
         deb_println("[action]<error> Giving up the request.", DEBUG_ERROR);
     } else {    
         deb_println("[action] Done.", DEBUG_INFO);
@@ -313,15 +321,15 @@ void TR064::takeNonce(String xml) {
     if (xml != "") {
         if (xmlTakeParam(xml, "Nonce") != "") {
             _nonce = xmlTakeParam(xml, "Nonce");
-            deb_println("Extracted the nonce '" + _nonce + "' from the last request.", DEBUG_INFO);
+            deb_println("[takeNonce] Extracted the nonce '" + _nonce + "' from the last request.", DEBUG_INFO);
         }
         if (_realm == "" && xmlTakeParam(xml, "Realm") != "") {
             _realm = xmlTakeParam(xml, "Realm");
             // Now we have everything to generate our hashed secret.
             String secr = _user + ":" + _realm + ":" + _pass;
-            deb_println("Your secret is is '" + secr + "'", DEBUG_INFO);
+            deb_println("[takeNonce] Your secret is '" + secr + "'", DEBUG_INFO);
             _secretH = md5String(secr);
-            deb_println("Your hashed secret is '" + _secretH + "'", DEBUG_INFO);
+            deb_println("[takeNonce] Your hashed secret is '" + _secretH + "'", DEBUG_INFO);
         }
     }
 }
@@ -386,7 +394,7 @@ String TR064::httpRequest(String url, String xml, String soapaction) {
 */
 /**************************************************************************/
 String TR064::httpRequest(String url, String xml, String soapaction, bool retry) {
-    deb_println("[HTTP] prepare request to URL: http://" + _ip + ":" + _port + url, DEBUG_INFO);
+    deb_println("[HTTP] Prepare HTTP request to URL: 'http://" + _ip + ":" + _port + url + "'.", DEBUG_INFO);
     
     HTTPClient http;
     http.begin(_ip, _port, url);
@@ -399,12 +407,12 @@ String TR064::httpRequest(String url, String xml, String soapaction, bool retry)
     // start connection and send HTTP header
     int httpCode=0;
     if (xml != "") {
-        deb_println("[HTTP] Posting XML:", DEBUG_VERBOSE);
+        deb_println("[HTTP] Printing the XML to be posted (between lines):", DEBUG_VERBOSE);
         deb_println("---------------------------------", DEBUG_VERBOSE);
         deb_println(xml, DEBUG_VERBOSE);
         deb_println("---------------------------------\n", DEBUG_VERBOSE);
         httpCode = http.POST(xml);
-        deb_println("[HTTP] POST... SOAPACTION: '" + soapaction + "'", DEBUG_INFO);
+        deb_println("[HTTP] POSTing the XML to SOAPACTION: '" + soapaction + "'", DEBUG_INFO);
     } else {
         httpCode = http.GET();
         deb_println("[HTTP] GET...", DEBUG_INFO);
@@ -415,7 +423,7 @@ String TR064::httpRequest(String url, String xml, String soapaction, bool retry)
     // httpCode will be negative on error
     if (httpCode > 0) {
         // HTTP header has been send and Server response header has been handled
-        deb_println("[HTTP] request code: " + String(httpCode), DEBUG_INFO);
+        deb_println("[HTTP] Request code: " + String(httpCode), DEBUG_INFO);
 
         // file found at server
         if (httpCode == HTTP_CODE_OK) {
@@ -440,7 +448,7 @@ String TR064::httpRequest(String url, String xml, String soapaction, bool retry)
         }
     }
     
-    deb_println("[HTTP] Received back", DEBUG_VERBOSE);
+    deb_println("[HTTP] Printing received reply (between lines):", DEBUG_VERBOSE);
     deb_println("---------------------------------", DEBUG_VERBOSE);
     deb_println(payload, DEBUG_VERBOSE);
     deb_println("---------------------------------\n", DEBUG_VERBOSE);
