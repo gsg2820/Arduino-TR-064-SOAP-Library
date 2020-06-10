@@ -52,6 +52,7 @@ TR064::TR064(int port, String ip, String user, String pass) {
     _ip = ip;
     _user = user;
     _pass = pass;
+	_ninit = true;
     debug_level = DEBUG_ERROR;
 }
 
@@ -66,6 +67,7 @@ void TR064::init() {
     delay(100); // TODO: REMOVE (after testing, that it still works!)
     // Get a list of all services and the associated urls
     initServiceURLs();
+	_ninit = false;
 }
 
 /**************************************************************************/
@@ -149,7 +151,7 @@ String TR064::generateAuthXML() {
 /**************************************************************************/
 String TR064::generateAuthToken() {
     String token = md5String(_secretH + ":" + _nonce);
-    deb_println("[generateAuthToken] The auth token is '" + token + "'.", DEBUG_INFO);
+    deb_println("[generateAuthToken] With nonce '" + _nonce + "', the auth token is '" + token + "'.", DEBUG_INFO);
     return token;
 }
 
@@ -290,6 +292,7 @@ String TR064::action(String service, String act, String params[][2], int nParam)
 */
 /**************************************************************************/
 String TR064::action_raw(String service, String act, String params[][2], int nParam) {
+	if (_ninit) init();
     // Generate the XML-envelop
     String xml = _requestStart + generateAuthXML() + "<s:Body><u:"+act+" xmlns:u='" + service + "'>";
     // Add request-parameters to XML

@@ -91,10 +91,12 @@ class TR064 {
         const String _detectPage = "/tr64desc.xml";
 
         /* TODO: We should give access to this data for users to inspect the
-        * possibilities of their device(s) - see #9 on Github.
-        TODO: Remove 100 services limits here
+        *  possibilities of their device(s) - see #9 on Github.
+        *  TODO: Remove 100 services limits here
         */
         String _services[100][2];
+		// Library not initialized?
+        bool _ninit;
 };
 
 #endif
